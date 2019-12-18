@@ -1,7 +1,34 @@
-import {Readable, PassThrough, Writable} from "stream";
+import {PassThrough} from "stream";
+import {ReadableTemplate, WritableTemplate} from "io-stream-templates";
 import {S3} from "aws-sdk";
 
-export class PutStream extends Writable {
+export class Get extends ReadableTemplate {
+    constructor(s3: S3, params: S3.GetObjectRequest) {
+        super(() => {
+            const req = s3.getObject(params);
+            return req.createReadStream();
+        });
+    }
+}
+
+export class Put extends WritableTemplate {
+    constructor(s3: S3, params: S3.PutObjectRequest) {
+        super(() => {
+            const pt = new PassThrough();
+            params.Body = pt;
+            s3.upload(params, (err: any, data: S3.ManagedUpload.SendData) => {
+                this.emit("upload-complete", err, data);
+                if (err) {
+                    this.emit("error", err);
+                }
+            });
+            return pt;
+        });
+    }
+}
+
+/*
+export class Put extends Writable {
     private _pt: PassThrough;
     constructor(s3: S3, params: S3.PutObjectRequest) {
         super();
@@ -25,24 +52,4 @@ export class PutStream extends Writable {
         this._pt.write(chunk, encoding, callback);
     }
 }
-
-export class GetStream extends Readable {
-    private _readable: Readable;
-    constructor(s3: S3, params: S3.GetObjectRequest) {
-        super();
-        const req = s3.getObject(params);
-        this._readable = req.createReadStream();
-        this._readable.on("data", (chunk) => {
-            if (!this.push(chunk)) {
-                this._readable.pause();
-            }
-        }).on("end", () => {
-            this.push(null);
-        }).on("error", (err) => {
-            this.emit("error", err);
-        });
-    }
-    _read(size: number) {
-        this._readable.resume();
-    }
-}
+*/
