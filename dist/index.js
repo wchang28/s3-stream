@@ -29,20 +29,22 @@ exports.Get = Get;
 var Put = /** @class */ (function (_super) {
     __extends(Put, _super);
     function Put(s3, params) {
-        var _this = _super.call(this, function () {
-            var pt = new stream_1.PassThrough();
-            params.Body = pt;
+        return _super.call(this, function () {
+            var ptBody = new stream_1.PassThrough();
+            var ptResponse = new stream_1.PassThrough();
+            params.Body = ptBody;
             s3.upload(params, function (err, data) {
-                _this.emit("upload-complete", err, data);
                 if (err) {
-                    _this.emit("error", err);
+                    ptResponse.emit("error", err);
+                }
+                else {
+                    ptResponse.end(JSON.stringify(data));
                 }
             });
-            return pt;
+            return { writable: ptBody, readable: ptResponse };
         }) || this;
-        return _this;
     }
     return Put;
-}(io_stream_templates_1.WritableTemplate));
+}(io_stream_templates_1.IOTemplate));
 exports.Put = Put;
 //# sourceMappingURL=index.js.map

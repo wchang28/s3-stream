@@ -1,5 +1,5 @@
 import {PassThrough} from "stream";
-import {ReadableTemplate, WritableTemplate} from "io-stream-templates";
+import {ReadableTemplate, IOTemplate} from "io-stream-templates";
 import {S3} from "aws-sdk";
 
 export class Get extends ReadableTemplate {
@@ -11,18 +11,20 @@ export class Get extends ReadableTemplate {
     }
 }
 
-export class Put extends WritableTemplate {
+export class Put extends IOTemplate {
     constructor(s3: S3, params: S3.PutObjectRequest) {
         super(() => {
-            const pt = new PassThrough();
-            params.Body = pt;
-            s3.upload(params, (err: any, data: S3.ManagedUpload.SendData) => {
-                this.emit("upload-complete", err, data);
+            const ptBody = new PassThrough();
+            const ptResponse = new PassThrough();
+            params.Body = ptBody;
+            s3.upload(params, (err, data) => {
                 if (err) {
-                    this.emit("error", err);
+                    ptResponse.emit("error", err);
+                } else {
+                    ptResponse.end(JSON.stringify(data));
                 }
             });
-            return pt;
+            return {writable: ptBody, readable: ptResponse};
         });
     }
 }
