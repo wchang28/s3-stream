@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@types/node": "^12.12.18",
-    "aws-sdk": "^2.590.0",
+    "aws-sdk": "^2.814.0",
     "io-stream-templates": "git+https://github.com/wchang28/io-stream-templates.git"
   }
 }
